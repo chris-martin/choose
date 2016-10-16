@@ -1,0 +1,8 @@
+resolver: lts-6.7
+
+packages:
+  - choose
+  - choose-exe
+
+nix:
+  shell-file: shell.nix
