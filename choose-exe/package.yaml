@@ -3,7 +3,7 @@ version: 0.1.0.0
 author: Chris Martin <ch.martin@gmail.com>
 maintainer: Chris Martin <ch.martin@gmail.com>
 license: Apache-2.0
-license-file: ../license.txt
+license-file: license.txt
 category: Application
 ghc-options: -Wall -fwarn-unused-imports
 
