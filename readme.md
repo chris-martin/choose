@@ -1,3 +1,5 @@
+![](https://travis-ci.org/chris-martin/choose.svg?branch=master)
+
 An efficient mechanism to select *n* items uniformly at random from an input
 stream, for some fixed *n*.
 
