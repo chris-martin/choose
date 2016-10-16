@@ -1,6 +1,7 @@
 name: choose-exe
 version: 0.1.0.0
 license: Apache-2.0
+category: Application
 ghc-options: -Wall -fwarn-unused-imports
 
 dependencies:
