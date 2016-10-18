@@ -1,14 +1,20 @@
-name: choose
-version: 0.1.0.0
-synopsis: Choose random elements from a stream.
+name:     choose
+version:  0.1.0.0
+category: Random
+
+synopsis: >
+  Choose random elements from a stream.
+
 description: >
   Provides an efficient mechanism to select /n/ items uniformly
   at random from an input stream, for some fixed /n/.
-author: Chris Martin <ch.martin@gmail.com>
+
+author:     Chris Martin <ch.martin@gmail.com>
 maintainer: Chris Martin <ch.martin@gmail.com>
-license: Apache-2.0
+
+license:      Apache-2.0
 license-file: license.txt
-category: Random
+
 ghc-options: -Wall
 
 dependencies:
