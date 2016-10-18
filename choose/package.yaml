@@ -12,7 +12,7 @@ category: Random
 ghc-options: -Wall -fwarn-unused-imports
 
 dependencies:
-  - base >= 4.7 && < 5
+  - base
   - MonadRandom
 
 library:
