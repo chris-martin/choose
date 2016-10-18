@@ -9,7 +9,7 @@ maintainer: Chris Martin <ch.martin@gmail.com>
 license: Apache-2.0
 license-file: license.txt
 category: Random
-ghc-options: -Wall -fwarn-unused-imports
+ghc-options: -Wall
 
 dependencies:
   - base
