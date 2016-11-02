@@ -14,9 +14,6 @@ module Data.Random.Choose
       -- $outline
     ) where
 
-import Data.Random.Choose.IO
-import Data.Random.Choose.Tree
-
 {- $outline
 
 We store items on a binary tree ('Tree'), moving them down the left or right
