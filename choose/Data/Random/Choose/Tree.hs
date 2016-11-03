@@ -6,11 +6,11 @@ selection algorithm described in "Data.Random.Choose".
 -}
 
 module Data.Random.Choose.Tree
-    ( Tree(..), empty, insert, applyLimit, evict, disambiguate ) where
+    ( Tree(..)
+    , empty, insert, applyLimit, evict, disambiguate
+    ) where
 
---------------------------------------------------------------------------------
-
-import Control.Monad.Random (Rand, RandomGen, getRandom)
+import Data.Random.Choose.Internal.Imports
 
 --------------------------------------------------------------------------------
 
@@ -27,8 +27,8 @@ instance Foldable Tree where
     foldr _ z Nil = z
     foldr f z (Tree size (x:xs) left right) =
         foldr f (f x z) (Tree (size - 1) xs left right)
-    foldr f z (Tree size [] left right) =
-        (\z -> foldr f z left) . (\z -> foldr f z right) $ z
+    foldr f z (Tree _ [] left right) =
+        (\z' -> foldr f z' left) . (\z' -> foldr f z' right) $ z
 
     length Nil      = 0
     length t@Tree{} = treeSize t
@@ -88,6 +88,8 @@ evict tree = do
                        else (\x -> (left, x))  <$> evict right
 
     return $ Tree (length left' + length right') [] left' right'
+
+disambiguate Nil = pure Nil
 
 -- For a tree with no items at the root, no disambiguation is possible
 -- (remember that disambiguate operates at the root only).

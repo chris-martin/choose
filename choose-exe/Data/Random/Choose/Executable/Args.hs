@@ -10,15 +10,11 @@ module Data.Random.Choose.Executable.Args
     , getN, defaultN, parserN
     ) where
 
---------------------------------------------------------------------------------
+import Data.Random.Choose.Internal.Imports
+import Data.Random.Choose.Executable.Internal (intToString)
 
 import Control.Applicative (optional)
-
-import Data.Maybe  (fromMaybe)
-import Data.Monoid ((<>))
-
 import qualified Options.Applicative.Builder as Opt
-
 import Options.Applicative.Extra (execParser, helper)
 import Options.Applicative.Types (Parser)
 
@@ -37,7 +33,8 @@ readInt = Opt.auto
 
 parserN :: Parser (Maybe Int)
 parserN = optional $ Opt.argument readInt $ Opt.metavar "N" <> Opt.help help
-    where help = "Number of items to choose (default: " ++ show defaultN ++ ")"
+    where help = "Number of items to choose (default: "
+                     <> intToString defaultN <> ")"
 
 getN :: Args -> Int
 getN = fromMaybe defaultN . argN

@@ -5,22 +5,13 @@
 
 -}
 
-{-# LANGUAGE ScopedTypeVariables #-}
+module Data.Random.Choose.IO
+    ( getSelectionsIO
+    ) where
 
-module Data.Random.Choose.IO ( getSelectionsIO ) where
-
---------------------------------------------------------------------------------
-
+import Data.Random.Choose.Internal.Imports
 import qualified Data.Random.Choose.Tree as Tree
-
 import Data.Random.Choose.Tree (Tree)
-
-import Control.Monad.Random   (evalRandIO)
-
-import qualified Data.Foldable as Foldable
-
-import Data.Function ((&))
-import Data.List     (sort)
 
 --------------------------------------------------------------------------------
 
@@ -56,4 +47,4 @@ getSelectionsIO getItem limit = f 0 Tree.empty
 
             -- We've reached the end of the input. Convert the tree to a list,
             -- sort it, and strip out the indices to return just the text.
-            Nothing -> return $ snd <$> sort (Foldable.toList tree)
+            Nothing -> return $ snd <$> sort (toList tree)

@@ -16,6 +16,9 @@ license:      Apache-2.0
 license-file: license.txt
 
 ghc-options: -Wall
+default-extensions:
+  - NoImplicitPrelude
+  - ScopedTypeVariables
 
 dependencies:
   - base
@@ -26,4 +29,5 @@ library:
   exposed-modules:
     - Data.Random.Choose
     - Data.Random.Choose.Tree
+    - Data.Random.Choose.Internal.Imports
     - Data.Random.Choose.IO

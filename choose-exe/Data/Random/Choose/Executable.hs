@@ -6,20 +6,20 @@ Its arguments are specified by "Data.Random.Choose.Executable.Args".
 
 -}
 
-module Data.Random.Choose.Executable ( main ) where
+module Data.Random.Choose.Executable
+    ( main
+    ) where
 
---------------------------------------------------------------------------------
-
+import Data.Random.Choose.Internal.Imports
 import qualified Data.Random.Choose.Executable.Args as Args
-import           Data.Random.Choose.IO              (getSelectionsIO)
+import Data.Random.Choose.IO (getSelectionsIO)
 
 import qualified Data.Text.IO as TextIO
 
 import Control.Exception.Base (try)
-import Control.Monad          (when)
-import Data.Text              (Text)
-import System.IO              (stdin)
-import System.IO.Error        (isEOFError)
+import Data.Text (Text)
+import System.IO (stdin)
+import System.IO.Error (isEOFError)
 
 --------------------------------------------------------------------------------
 

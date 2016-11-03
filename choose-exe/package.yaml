@@ -16,6 +16,7 @@ license:      Apache-2.0
 license-file: license.txt
 
 ghc-options: -Wall
+default-extensions: NoImplicitPrelude
 
 dependencies:
   - base
@@ -28,6 +29,7 @@ library:
   exposed-modules:
     - Data.Random.Choose.Executable
     - Data.Random.Choose.Executable.Args
+    - Data.Random.Choose.Executable.Internal
 
 executables:
   choose:
