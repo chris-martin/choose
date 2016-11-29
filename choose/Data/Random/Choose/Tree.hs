@@ -22,8 +22,8 @@ data Tree a = Nil | Tree
     }
 -- ^ A binary tree with arbitrarily many values at each node.
 
-instance Foldable Tree where
-
+instance Foldable Tree
+  where
     foldr _ z Nil = z
     foldr f z (Tree size (x:xs) left right) =
         foldr f (f x z) (Tree (size - 1) xs left right)
@@ -87,7 +87,7 @@ evict tree = do
                        then (\x -> (x, right)) <$> evict left
                        else (\x -> (left, x))  <$> evict right
 
-    return $ Tree (length left' + length right') [] left' right'
+    pure $ Tree (length left' + length right') [] left' right'
 
 disambiguate Nil = pure Nil
 

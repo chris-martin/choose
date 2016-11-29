@@ -42,5 +42,5 @@ main = do
 readLine = do
     lineEither <- try $ TextIO.hGetLine stdin
     case lineEither of
-        Left e     -> if isEOFError e then return Nothing else ioError e
-        Right line -> return $ Just line
+        Left e     -> if isEOFError e then pure Nothing else ioError e
+        Right line -> pure $ Just line
