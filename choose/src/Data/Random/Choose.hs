@@ -24,19 +24,17 @@ import Data.Random.Choose.Internal.Prelude
 
 {- $algorithm
 
-We store items on a binary tree ('Tree'), moving them down the left or right
-branch according to a coin flip. At the end, the rightmost /n/ items on the tree
-are selected. Each time we 'insert' into a tree having /n/ items, we prune its
-leftmost item ('applyLimit' and 'evict').
+We store items on a 'Tree', moving them down into randomly-selected branches. At
+the end, the rightmost /n/ items on the tree are selected. After we add items to
+the tree ('addToTree'), we take prune its leftmost items ('treeTakeRight')
 
-It may be helpful to think of this as lazily assigning each item a /d/-bit
-score, where /d/ is the maximum depth of the tree. Moving an item to the left
-or right corresponds to appending a 0 or 1 to its score. Note that the laziness
-is necessary, because /d/ is not known a priori.
-
-The process of moving items futher down the tree is referred to as
-disambiguation ('disambiguate') because its purpose is to resolve ties in the
-score.
+It may be helpful to think of this a @Tree k a@ as a bag of items of type @a@
+with "score" of type @[k]@ lazily assigned to each item. The length of the score
+is /d/, where /d/ is the maximum depth of the tree. Moving an item downwards
+through the tree corresponds to appending a @k@ to its score. Note that the
+laziness is necessary because /d/ is not known a priori. The process of moving
+items futher down the tree is referred to as disambiguation ('disambiguateTree')
+because its purpose is to resolve "ties" in the score.
 
 -}
 
