@@ -77,28 +77,37 @@ instance Foldable (Tree k)
         let z' = foldr f z  values
         in       foldr f z' children
 
+-- | A tree containing with no items.
 emptyTree :: Tree k a
 emptyTree = Tree 0 emptySeq emptyForest
 
-singletonTree :: [k] -> a -> Tree k a
+-- | A tree containing a single item.
+singletonTree
+    :: [k]      -- ^ /ks/: The item's "score" (its position in the tree)
+    -> a        -- ^ /x/: The singular item in the tree
+    -> Tree k a -- ^ A tree containing a single item /x/ at position /ks/
 singletonTree []     a = Tree 1 (singletonSeq a) emptyForest
 singletonTree (k:ks) a = Tree 1 mempty (singletonForest (k :| ks) a)
 
--- | A fully ambiguous tree with all of the values at the root.
+-- | A fully ambiguous tree with all of the values at the root
+--   (none of the items have any "score" at all).
 flatTree :: Seq a -> Tree k a
 flatTree xs = Tree 1 xs emptyForest
 
 addToTree
-    :: Seq a    -- ^ Items to add to the tree
-    -> Tree k a
-    -> Tree k a
+    :: Seq a    -- ^ /xs/: Items to add to the tree
+    -> Tree k a -- ^ /t/
+    -> Tree k a -- ^ A tree containing all of the items from /t/ in their
+                --   same positions, plus each of the /xs/ at the root of
+                --   the tree.
 addToTree items t = t { treeValues = items <> treeValues t }
 
--- | Remove /n/ items from a tree.
+-- | Remove the /n/ leftmost items from a tree.
 treeDrop :: forall m k a. (Ord k, Random k, MonadRandom m)
-    => Int          -- ^ /n/
-    ->    Tree k a
-    -> m (Tree k a)
+    => Int          -- ^ /n/: Maximum number of items to remove from the tree
+    ->    Tree k a  -- ^ /t/
+    -> m (Tree k a) -- ^ /t/ with the leftmost /n/ items removed from it, or
+                    --   an empty tree if /t/ contains fewer than /n/ items
 treeDrop n t
     | n <= 0        = pure t
     | n >= length t = pure emptyTree
@@ -107,16 +116,17 @@ treeDrop n t
         children' <- forestDrop n $ treeChildren t'
         pure $ Tree (Sum $ length t' - n) mempty children'
 
+-- | Retain the /n/ rightmost items in a tree.
 treeTakeRight :: forall m k a. (Ord k, Random k, MonadRandom m)
-    => Int          -- ^ Maximum number of elements to retain
-    ->    Tree k a
+    => Int          -- ^ Maximum number of elements to retain in the tree
+    ->    Tree k a  -- ^ /t/
     -> m (Tree k a)
 treeTakeRight n t = treeDrop (length t - n) t
 
 -- | Perform disambiguation at the root level, pushing items from
 --   the root down into subtrees as necessary.
 disambiguateTree :: forall m k a. (Ord k, Random k, MonadRandom m)
-    =>    Tree k a
+    =>    Tree k a  -- ^ /t/
     -> m (Tree k a)
 disambiguateTree t@(Tree size values children)
     | null (treeValues t) || length t == 1 = pure t
@@ -141,16 +151,23 @@ instance Foldable (Forest k)
     null      = all null                        . forestMap
     foldr f z = foldr (\b t -> foldr f t b) z   . forestMap
 
+-- | A forest containing no trees.
 emptyForest :: Forest k a
 emptyForest = Forest emptyMap
 
-singletonForest :: NonEmpty k -> a -> Forest k a
+-- | A forest containing a single item.
+singletonForest
+    :: NonEmpty k -- ^ /ks/: The item's "score" (its position in the forest)
+    -> a          -- ^ /x/: The singular item in the forest
+    -> Forest k a -- ^ A forest containing a single item /x/ at position /ks/
 singletonForest (k :| ks) a = Forest $ singletonMap k $ singletonTree ks a
 
 -- | Remove /n/ items from a forest.
 forestDrop :: forall m k a. (Ord k, Random k, MonadRandom m)
-    => Int -- ^/@n/
-    -> Forest k a -> m (Forest k a)
+    => Int            -- ^ /n/: Maximum number of items to remove from
+                      --   the forest
+    ->    Forest k a  -- ^ /f/
+    -> m (Forest k a)
 forestDrop n f@(Forest map) = maybe (pure f) go (mapLookupMin map)
   where
     go (k, t)
@@ -162,8 +179,9 @@ forestDrop n f@(Forest map) = maybe (pure f) go (mapLookupMin map)
 --   randomly-selected subtree.
 addToForest :: forall t m k a.
     (Traversable t, Ord k, Random k, MonadRandom m)
-    => t a -- ^ Items to add to the forest
-    -> Forest k a -> m (Forest k a)
+    => t a            -- ^ Items to add to the forest
+    ->    Forest k a  -- ^ /f/
+    -> m (Forest k a)
 addToForest values forest =
     foldr (<>) forest <$> forM values disambiguation
   where
