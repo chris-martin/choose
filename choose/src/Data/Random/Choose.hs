@@ -60,7 +60,7 @@ data Tree k a = Tree
 
 instance Ord k => Monoid (Tree k a)
   where
-    mempty = Tree mempty mempty mempty
+    mempty = emptyTree
 
     mappend (Tree size  values  children)
             (Tree size' values' children') =
