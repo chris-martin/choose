@@ -14,7 +14,7 @@ module Data.Random.Choose (
 
     -- * Tree
     , Tree(..), emptyTree, singletonTree, flatTree, addToTree
-    , treeDrop, disambiguateTree
+    , treeDrop, treeTakeRight, disambiguateTree
 
     -- * Forest
     , Forest(..), emptyForest, singletonForest, forestDrop, addToForest
