@@ -10,8 +10,7 @@ module Data.Random.Choose.Executable.Args
     , getN, defaultN, parserN
     ) where
 
-import Data.Random.Choose.Internal.Imports
-import Data.Random.Choose.Executable.Internal (intToString)
+import Data.Random.Choose.Internal.Prelude
 
 import Control.Applicative (optional)
 import qualified Options.Applicative.Builder as Opt
@@ -37,7 +36,7 @@ parserN = optional $ Opt.argument readInt $ Opt.metavar "N" <> Opt.help help
                      <> intToString defaultN <> ")"
 
 getN :: Args -> Int
-getN = fromMaybe defaultN . argN
+getN = maybe defaultN id . argN
 
 parser :: Parser Args
 parser = Args <$> parserN

@@ -1,5 +1,5 @@
 name:     choose
-version:  0.1.0.0
+version:  1.0.0.0
 category: Random
 
 synopsis: >
@@ -17,17 +17,36 @@ license-file: license.txt
 
 ghc-options: -Wall
 default-extensions:
+  - ApplicativeDo
+  - DeriveFunctor
+  - InstanceSigs
   - NoImplicitPrelude
+  - RankNTypes
   - ScopedTypeVariables
 
 dependencies:
   - base
+  - containers
   - MonadRandom
+  - semigroups
+  - streaming
+  - transformers
 
 library:
-  source-dirs: .
+  source-dirs: src
   exposed-modules:
     - Data.Random.Choose
-    - Data.Random.Choose.Tree
-    - Data.Random.Choose.Internal.Imports
-    - Data.Random.Choose.IO
+    - Data.Random.Choose.Internal.Prelude
+
+tests:
+  test:
+    source-dirs: test
+    main: test.hs
+    dependencies:
+      - base
+      - checkers
+      - choose
+      - QuickCheck
+      - test-framework
+      - test-framework-quickcheck2
+    ghc-options: -Wall

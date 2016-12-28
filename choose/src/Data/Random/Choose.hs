@@ -1,0 +1,212 @@
+{- |
+
+"Data.Random.Choose" provides an efficient mechanism to select /n/ items
+uniformly at random from an input stream, for some fixed /n/.
+
+-}
+
+module Data.Random.Choose (
+    -- * Algorithm
+    -- $algorithm
+
+    -- * Streaming
+      choose, treeStream, seqStream
+
+    -- * Tree
+    , Tree(..), emptyTree, singletonTree, flatTree, addToTree
+    , treeDrop, disambiguateTree
+
+    -- * Forest
+    , Forest(..), emptyForest, singletonForest, forestDrop, addToForest
+    ) where
+
+import Data.Random.Choose.Internal.Prelude
+
+{- $algorithm
+
+We store items on a binary tree ('Tree'), moving them down the left or right
+branch according to a coin flip. At the end, the rightmost /n/ items on the tree
+are selected. Each time we 'insert' into a tree having /n/ items, we prune its
+leftmost item ('applyLimit' and 'evict').
+
+It may be helpful to think of this as lazily assigning each item a /d/-bit
+score, where /d/ is the maximum depth of the tree. Moving an item to the left
+or right corresponds to appending a 0 or 1 to its score. Note that the laziness
+is necessary, because /d/ is not known a priori.
+
+The process of moving items futher down the tree is referred to as
+disambiguation ('disambiguate') because its purpose is to resolve ties in the
+score.
+
+-}
+
+
+--------------------------------------------------------------------------------
+--  Tree
+--------------------------------------------------------------------------------
+
+data Tree k a = Tree
+    { treeSize     :: Sum Int    -- ^ Total number of items at this node
+                                 --   and below
+    , treeValues   :: Seq a      -- ^ Items at this node
+    , treeChildren :: Forest k a -- ^ Subtrees (lesser keys are evicted
+                                 --   first, greater keys are more likely
+                                 --   to be included in the final result)
+    } deriving (Eq, Functor, Show)
+
+instance Ord k => Monoid (Tree k a)
+  where
+    mempty = Tree mempty mempty mempty
+
+    mappend (Tree size  values  children)
+            (Tree size' values' children') =
+        Tree (size     <> size')
+             (values   <> values')
+             (children <> children')
+
+instance Foldable (Tree k)
+  where
+    length = getSum      . treeSize
+    null   = (== mempty) . treeSize
+
+    foldr f z (Tree _ values children) =
+        let z' = foldr f z  values
+        in       foldr f z' children
+
+emptyTree :: Tree k a
+emptyTree = Tree 0 emptySeq emptyForest
+
+singletonTree :: [k] -> a -> Tree k a
+singletonTree []     a = Tree 1 (singletonSeq a) emptyForest
+singletonTree (k:ks) a = Tree 1 mempty (singletonForest (k :| ks) a)
+
+-- | A fully ambiguous tree with all of the values at the root.
+flatTree :: Seq a -> Tree k a
+flatTree xs = Tree 1 xs emptyForest
+
+addToTree
+    :: Seq a -- ^ Items to add to the tree
+    -> Tree k a -> Tree k a
+addToTree items t = t { treeValues = items <> treeValues t }
+
+-- | Remove /n/ items from a tree.
+treeDrop :: forall m k a. (Ord k, Random k, MonadRandom m)
+    => Int -- ^ /n/
+    -> Tree k a -> m (Tree k a)
+treeDrop n t
+    | n <= 0        = pure t
+    | n >= length t = pure emptyTree
+    | otherwise = do
+        t'        <- disambiguateTree t
+        children' <- forestDrop n $ treeChildren t'
+        pure $ Tree (Sum $ length t' - n) mempty children'
+
+treeTakeRight :: forall m k a. (Ord k, Random k, MonadRandom m)
+    => Int -- ^ Maximum number of elements to retain
+    -> Tree k a -> m (Tree k a)
+treeTakeRight n t = treeDrop (length t - n) t
+
+-- | Perform disambiguation at the root level, pushing items from
+--   the root down into subtrees as necessary.
+disambiguateTree :: forall m k a. (Ord k, Random k, MonadRandom m) =>
+    Tree k a -> m (Tree k a)
+disambiguateTree t@(Tree size values children)
+    | null (treeValues t) || length t == 1 = pure t
+    | otherwise = Tree size mempty <$> addToForest values children
+
+
+--------------------------------------------------------------------------------
+--  Forest
+--------------------------------------------------------------------------------
+
+newtype Forest k a = Forest { forestMap :: Map k (Tree k a) }
+    deriving (Eq, Functor, Show)
+
+instance Ord k => Monoid (Forest k a)
+  where
+    mempty = emptyForest
+    mappend (Forest x) (Forest y) = Forest $ mapUnionWith (<>) x y
+
+instance Foldable (Forest k)
+  where
+    length    = getSum . foldMap (Sum . length) . forestMap
+    null      = all null                        . forestMap
+    foldr f z = foldr (\b t -> foldr f t b) z   . forestMap
+
+emptyForest :: Forest k a
+emptyForest = Forest emptyMap
+
+singletonForest :: NonEmpty k -> a -> Forest k a
+singletonForest (k :| ks) a = Forest $ singletonMap k $ singletonTree ks a
+
+-- | Remove /n/ items from a forest.
+forestDrop :: forall m k a. (Ord k, Random k, MonadRandom m)
+    => Int -- ^/@n/
+    -> Forest k a -> m (Forest k a)
+forestDrop n f@(Forest map) = maybe (pure f) go (mapLookupMin map)
+  where
+    go (k, t)
+        | length t <= n = let f' = Forest $ mapDelete k map
+                          in  forestDrop (n - length t) f'
+        | otherwise = Forest <$> (mapInsertF k (treeDrop n t) map)
+
+-- | Add multiple items to a forest by assigning each one to a
+--   randomly-selected subtree.
+addToForest :: forall t m k a.
+    (Traversable t, Ord k, Random k, MonadRandom m)
+    => t a -- ^ Items to add to the forest
+    -> Forest k a -> m (Forest k a)
+addToForest values forest =
+    foldr (<>) forest <$> forM values disambiguation
+  where
+    disambiguation v = (\k -> singletonForest (pure k) v) <$> getRandom
+
+
+--------------------------------------------------------------------------------
+--  Indexed
+--------------------------------------------------------------------------------
+
+data Indexed a = Indexed { index :: Int, indexedValue :: a }
+
+instance Eq  (Indexed a)
+  where
+    x == y = index x == index y
+
+instance Ord (Indexed a)
+  where
+    compare x y = compare (index x) (index y)
+
+sortIndexedValues :: Foldable t => t (Indexed a) -> Seq a
+sortIndexedValues = fmap indexedValue . sortSeq . seqFromList . toList
+
+
+--------------------------------------------------------------------------------
+--  Streaming
+--------------------------------------------------------------------------------
+
+-- | Select /n/ items uniformly at random from an input stream.
+treeStream :: forall k a m r. (Ord k, Random k, MonadRandom m) =>
+       Int                     -- ^ /n/: Number of items to choose
+    -> Stream (Of (Seq a)) m r -- ^ Chunks of items to choose from
+    -> m (Tree k a)            -- ^ /n/ of the items (or all of the items
+                               --   if fewer than /n/ are produced)
+treeStream limit =
+    fmap (maybe emptyTree id) .
+    streamLast_ .
+    streamScanM (\t items -> treeTakeRight limit $ addToTree items t)
+                (pure emptyTree) pure
+
+-- | Chunk a stream into fixed-length 'Seq's.
+seqStream :: Monad m => Int -> Stream (Of      a)  m r
+                            -> Stream (Of (Seq a)) m r
+seqStream size = streamMap seqFromList .
+                 streamMapped streamToList .
+                 chunksOf size
+
+indexedStream :: Monad m => Stream (Of          a)  m r
+                         -> Stream (Of (Indexed a)) m r
+indexedStream = streamZipWith Indexed (streamIterate succ 0)
+
+choose :: forall m a r. MonadRandom m => Int -> Stream (Of a) m r -> m (Seq a)
+choose n s = do tree <- treeStream n $ seqStream 1024 $ indexedStream s
+                pure $ sortIndexedValues (tree :: Tree Int8 (Indexed a))

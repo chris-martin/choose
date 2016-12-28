@@ -1,5 +1,5 @@
 name:     choose-exe
-version:  0.2.0.0
+version:  1.0.0.0
 category: Application
 
 synopsis: >
@@ -25,13 +25,14 @@ dependencies:
   - text
 
 library:
-  source-dirs: .
+  source-dirs: src
   exposed-modules:
     - Data.Random.Choose.Executable
     - Data.Random.Choose.Executable.Args
-    - Data.Random.Choose.Executable.Internal
 
 executables:
   choose:
-    source-dirs: .
+    source-dirs: app
     main: choose.hs
+    dependencies:
+      - choose-exe
