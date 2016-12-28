@@ -6,18 +6,24 @@ uniformly at random from an input stream, for some fixed /n/.
 -}
 
 module Data.Random.Choose (
-    -- * Algorithm
-    -- $algorithm
 
-    -- * Streaming
-      choose, treeStream, seqStream
+      choose
 
     -- * Tree
+    -- $algorithm
     , Tree(..), emptyTree, singletonTree, flatTree, addToTree
     , treeDrop, treeTakeRight, disambiguateTree
 
-    -- * Forest
+    -- ** Forest
     , Forest(..), emptyForest, singletonForest, forestDrop, addToForest
+
+    -- * Utilities
+
+    -- ** Streaming
+    , treeStream, seqStream
+
+    -- ** Indexed
+    , Indexed, indexedStream, sortIndexedValues
     ) where
 
 import Data.Random.Choose.Internal.Prelude
@@ -83,14 +89,16 @@ flatTree :: Seq a -> Tree k a
 flatTree xs = Tree 1 xs emptyForest
 
 addToTree
-    :: Seq a -- ^ Items to add to the tree
-    -> Tree k a -> Tree k a
+    :: Seq a    -- ^ Items to add to the tree
+    -> Tree k a
+    -> Tree k a
 addToTree items t = t { treeValues = items <> treeValues t }
 
 -- | Remove /n/ items from a tree.
 treeDrop :: forall m k a. (Ord k, Random k, MonadRandom m)
-    => Int -- ^ /n/
-    -> Tree k a -> m (Tree k a)
+    => Int          -- ^ /n/
+    ->    Tree k a
+    -> m (Tree k a)
 treeDrop n t
     | n <= 0        = pure t
     | n >= length t = pure emptyTree
@@ -100,14 +108,16 @@ treeDrop n t
         pure $ Tree (Sum $ length t' - n) mempty children'
 
 treeTakeRight :: forall m k a. (Ord k, Random k, MonadRandom m)
-    => Int -- ^ Maximum number of elements to retain
-    -> Tree k a -> m (Tree k a)
+    => Int          -- ^ Maximum number of elements to retain
+    ->    Tree k a
+    -> m (Tree k a)
 treeTakeRight n t = treeDrop (length t - n) t
 
 -- | Perform disambiguation at the root level, pushing items from
 --   the root down into subtrees as necessary.
-disambiguateTree :: forall m k a. (Ord k, Random k, MonadRandom m) =>
-    Tree k a -> m (Tree k a)
+disambiguateTree :: forall m k a. (Ord k, Random k, MonadRandom m)
+    =>    Tree k a
+    -> m (Tree k a)
 disambiguateTree t@(Tree size values children)
     | null (treeValues t) || length t == 1 = pure t
     | otherwise = Tree size mempty <$> addToForest values children
@@ -174,7 +184,7 @@ instance Ord (Indexed a)
   where
     compare x y = compare (index x) (index y)
 
-sortIndexedValues :: Foldable t => t (Indexed a) -> Seq a
+sortIndexedValues :: forall t a. (Foldable t) => t (Indexed a) -> Seq a
 sortIndexedValues = fmap indexedValue . sortSeq . seqFromList . toList
 
 
@@ -182,12 +192,11 @@ sortIndexedValues = fmap indexedValue . sortSeq . seqFromList . toList
 --  Streaming
 --------------------------------------------------------------------------------
 
--- | Select /n/ items uniformly at random from an input stream.
 treeStream :: forall k a m r. (Ord k, Random k, MonadRandom m) =>
-       Int                     -- ^ /n/: Number of items to choose
-    -> Stream (Of (Seq a)) m r -- ^ Chunks of items to choose from
-    -> m (Tree k a)            -- ^ /n/ of the items (or all of the items
-                               --   if fewer than /n/ are produced)
+       Int                     -- ^ /n/: Maximum number of items to choose
+    -> Stream (Of (Seq a)) m r -- ^ /s/: Stream of chunks of items to choose from
+    -> m (Tree k a)            -- ^ A stream of 'Tree's containing at most /n/ of
+                               --   the items from /s/
 treeStream limit =
     fmap (maybe emptyTree id) .
     streamLast_ .
@@ -195,16 +204,32 @@ treeStream limit =
                 (pure emptyTree) pure
 
 -- | Chunk a stream into fixed-length 'Seq's.
-seqStream :: Monad m => Int -> Stream (Of      a)  m r
-                            -> Stream (Of (Seq a)) m r
-seqStream size = streamMap seqFromList .
-                 streamMapped streamToList .
-                 chunksOf size
+seqStream :: forall m a r. (Monad m)
+    => Int                     -- ^ /n/: Maximum number of items to include in
+                               --   each chunk
+    -> Stream (Of      a)  m r -- ^ /s/: A stream of items of type @a@
+    -> Stream (Of (Seq a)) m r -- ^ A stream containing the items from /s/
+                               --   grouped into contiguous 'Seq's of size at
+                               --   most /n/.
+seqStream size =
+    streamMap seqFromList .
+    streamMapped streamToList .
+    chunksOf size
 
-indexedStream :: Monad m => Stream (Of          a)  m r
-                         -> Stream (Of (Indexed a)) m r
+-- | Example: A stream of @[a, b, c]@ becomes a stream of
+--   @[Indexed 0 a, Indexed 1 b, Indexed 2 c]@.
+indexedStream :: forall m a r. (Monad m)
+    => Stream (Of          a)  m r -- ^ Stream of @a@
+    -> Stream (Of (Indexed a)) m r -- ^ Stream of @Indexed a@
 indexedStream = streamZipWith Indexed (streamIterate succ 0)
 
-choose :: forall m a r. MonadRandom m => Int -> Stream (Of a) m r -> m (Seq a)
-choose n s = do tree <- treeStream n $ seqStream 1024 $ indexedStream s
-                pure $ sortIndexedValues (tree :: Tree Int8 (Indexed a))
+-- | Select /n/ items uniformly at random from an input stream.
+choose :: forall m a r. (MonadRandom m)
+    => Int               -- ^ /n/: Maximum number of items to choose
+                         --   from the stream
+    -> Stream (Of a) m r -- ^ /s/: Stream from which to select items
+    -> m (Seq a)         -- ^ At most /n/ items selected from /s/ uniformly
+                         --   at random, in the order they appeared in /s/
+choose n s = do
+    tree <- treeStream n $ seqStream 1024 $ indexedStream s
+    pure $ sortIndexedValues (tree :: Tree Int8 (Indexed a))
