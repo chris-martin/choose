@@ -22,13 +22,13 @@ dependencies:
   - base
   - choose
   - optparse-applicative
+  - streaming
   - text
 
 library:
   source-dirs: src
   exposed-modules:
     - Data.Random.Choose.Executable
-    - Data.Random.Choose.Executable.Args
 
 executables:
   choose:

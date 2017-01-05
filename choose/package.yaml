@@ -36,7 +36,6 @@ library:
   source-dirs: src
   exposed-modules:
     - Data.Random.Choose
-    - Data.Random.Choose.Internal.Prelude
 
 tests:
   test:
@@ -49,4 +48,4 @@ tests:
       - QuickCheck
       - test-framework
       - test-framework-quickcheck2
-    ghc-options: -Wall
+    ghc-options: -Wall -fno-warn-orphans

@@ -26,7 +26,30 @@ module Data.Random.Choose (
     , Indexed, indexedStream, sortIndexedValues
     ) where
 
-import Data.Random.Choose.Internal.Prelude
+import Control.Applicative (Applicative(..))
+import Control.Monad (Monad(..), mapM)
+import Control.Monad.Random (MonadRandom, Random, getRandom)
+import Data.Bool ((||), otherwise)
+import Data.Eq (Eq(..))
+import Data.Foldable (Foldable(..), all)
+import Data.Function ((.), ($), const, id)
+import Data.Functor (Functor(..), (<$>))
+import Data.Int (Int, Int8)
+import Data.List.NonEmpty (NonEmpty(..))
+import Data.Map.Strict (Map)
+import Data.Maybe (Maybe(..), maybe)
+import Data.Monoid (Monoid(..), Sum(..), (<>))
+import Data.Ord (Ord(..))
+import Data.Sequence (Seq)
+import Data.Traversable (Traversable)
+import GHC.Enum (succ)
+import GHC.Num (Num(..))
+import GHC.Show (Show)
+import Streaming (Stream, Of, chunksOf)
+
+import qualified Data.Map.Strict as Map
+import qualified Data.Sequence as Seq
+import qualified Streaming.Prelude as Stream
 
 {- $algorithm
 
@@ -79,14 +102,14 @@ instance Foldable (Tree k)
 
 -- | A tree containing with no items.
 emptyTree :: Tree k a
-emptyTree = Tree 0 emptySeq emptyForest
+emptyTree = Tree 0 Seq.empty emptyForest
 
 -- | A tree containing a single item.
 singletonTree
     :: [k]      -- ^ /ks/: The item's "score" (its position in the tree)
     -> a        -- ^ /x/: The singular item in the tree
     -> Tree k a -- ^ A tree containing a single item /x/ at position /ks/
-singletonTree []     a = Tree 1 (singletonSeq a) emptyForest
+singletonTree []     a = Tree 1 (Seq.singleton a) emptyForest
 singletonTree (k:ks) a = Tree 1 mempty (singletonForest (k :| ks) a)
 
 -- | A fully ambiguous tree with all of the values at the root
@@ -143,7 +166,7 @@ newtype Forest k a = Forest { forestMap :: Map k (Tree k a) }
 instance Ord k => Monoid (Forest k a)
   where
     mempty = emptyForest
-    mappend (Forest x) (Forest y) = Forest $ mapUnionWith (<>) x y
+    mappend (Forest x) (Forest y) = Forest $ Map.unionWith (<>) x y
 
 instance Foldable (Forest k)
   where
@@ -153,14 +176,14 @@ instance Foldable (Forest k)
 
 -- | A forest containing no trees.
 emptyForest :: Forest k a
-emptyForest = Forest emptyMap
+emptyForest = Forest Map.empty
 
 -- | A forest containing a single item.
 singletonForest
     :: NonEmpty k -- ^ /ks/: The item's "score" (its position in the forest)
     -> a          -- ^ /x/: The singular item in the forest
     -> Forest k a -- ^ A forest containing a single item /x/ at position /ks/
-singletonForest (k :| ks) a = Forest $ singletonMap k $ singletonTree ks a
+singletonForest (k :| ks) a = Forest $ Map.singleton k $ singletonTree ks a
 
 -- | Remove /n/ items from a forest.
 forestDrop :: forall m k a. (Ord k, Random k, MonadRandom m)
@@ -168,12 +191,22 @@ forestDrop :: forall m k a. (Ord k, Random k, MonadRandom m)
                       --   the forest
     ->    Forest k a  -- ^ /f/
     -> m (Forest k a)
-forestDrop n f@(Forest map) = maybe (pure f) go (mapLookupMin map)
+forestDrop n f@(Forest map) = maybe (pure f) go (Map.lookupMin map)
   where
+    -- k: The leftmost key in the forest
+    -- t: The leftmost tree in the forest
     go (k, t)
-        | length t <= n = let f' = Forest $ mapDelete k map
-                          in  forestDrop (n - length t) f'
-        | otherwise = Forest <$> (mapInsertF k (treeDrop n t) map)
+
+        -- If the tree contains more than n items, drop n items from it.
+        | length t > n = Forest <$> insertF k (treeDrop n t) map
+
+        -- If the tree contains n items or fewer, remove the tree
+        -- entirely and recurse on the rest of the forest.
+        | otherwise = let f' = Forest $ Map.delete k map
+                      in  forestDrop (n - length t) f'
+
+insertF :: forall k a f. (Ord k, Functor f) => k -> f a -> Map k a -> f (Map k a)
+insertF k fa = Map.alterF (const $ Just <$> fa) k
 
 -- | Add multiple items to a forest by assigning each one to a
 --   randomly-selected subtree.
@@ -183,7 +216,7 @@ addToForest :: forall t m k a.
     ->    Forest k a  -- ^ /f/
     -> m (Forest k a)
 addToForest values forest =
-    foldr (<>) forest <$> forM values disambiguation
+    foldr (<>) forest <$> mapM disambiguation values
   where
     disambiguation v = (\k -> singletonForest (pure k) v) <$> getRandom
 
@@ -203,7 +236,7 @@ instance Ord (Indexed a)
     compare x y = compare (index x) (index y)
 
 sortIndexedValues :: forall t a. (Foldable t) => t (Indexed a) -> Seq a
-sortIndexedValues = fmap indexedValue . sortSeq . seqFromList . toList
+sortIndexedValues = fmap indexedValue . Seq.sort . Seq.fromList . toList
 
 
 --------------------------------------------------------------------------------
@@ -217,9 +250,9 @@ treeStream :: forall k a m r. (Ord k, Random k, MonadRandom m) =>
                                --   the items from /s/
 treeStream limit =
     fmap (maybe emptyTree id) .
-    streamLast_ .
-    streamScanM (\t items -> treeTakeRight limit $ addToTree items t)
-                (pure emptyTree) pure
+    Stream.last_ .
+    Stream.scanM (\t items -> treeTakeRight limit $ addToTree items t)
+                 (pure emptyTree) pure
 
 -- | Chunk a stream into fixed-length 'Seq's.
 seqStream :: forall m a r. (Monad m)
@@ -230,8 +263,8 @@ seqStream :: forall m a r. (Monad m)
                                --   grouped into contiguous 'Seq's of size at
                                --   most /n/.
 seqStream size =
-    streamMap seqFromList .
-    streamMapped streamToList .
+    Stream.map Seq.fromList .
+    Stream.mapped Stream.toList .
     chunksOf size
 
 -- | Example: A stream of @[a, b, c]@ becomes a stream of
@@ -239,7 +272,7 @@ seqStream size =
 indexedStream :: forall m a r. (Monad m)
     => Stream (Of          a)  m r -- ^ Stream of @a@
     -> Stream (Of (Indexed a)) m r -- ^ Stream of @Indexed a@
-indexedStream = streamZipWith Indexed (streamIterate succ 0)
+indexedStream = Stream.zipWith Indexed (Stream.iterate succ 0)
 
 -- | Select /n/ items uniformly at random from an input stream.
 choose :: forall m a r. (MonadRandom m)

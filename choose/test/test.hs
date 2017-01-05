@@ -1,25 +1,22 @@
 module Main (main) where
 
-import Data.Random.Choose.Internal.Prelude
 import qualified Data.Random.Choose as Choose
 import Data.Random.Choose (Tree(..), Forest(..))
 
-import Test.Framework (defaultMain, testGroup)
+import Test.Framework (Test, defaultMain, testGroup)
 import Test.Framework.Providers.QuickCheck2 (testProperty)
 
-import Test.QuickCheck (Arbitrary, Gen, Property, (.&&.),
-    arbitrary, conjoin, label, listOf, verboseCheckAll)
+import Test.QuickCheck (Arbitrary, Gen, Property,
+    arbitrary, conjoin, label, listOf)
 
-import qualified Test.QuickCheck as QC
 import qualified Test.QuickCheck.Checkers as Checkers
 import qualified Test.QuickCheck.Classes as Classes
 import Test.QuickCheck.Checkers (EqProp)
 
-import Prelude (putStrLn)
-
 main :: IO ()
 main = defaultMain tests
 
+tests :: [Test]
 tests =
     [ testGroup "Tree"
         [ testProperty "monoid laws" $
@@ -88,5 +85,5 @@ checkersTestProp :: Checkers.Test -> Property
 checkersTestProp (name, prop) = label name prop
 
 checkersBatchProp :: Checkers.TestBatch -> Property
-checkersBatchProp (name, tests) =
-    label name $ conjoin $ checkersTestProp <$> tests
+checkersBatchProp (name, checkersTests) =
+    label name $ conjoin $ checkersTestProp <$> checkersTests
