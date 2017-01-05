@@ -3,6 +3,17 @@ module Main (main) where
 import qualified Data.Random.Choose as Choose
 import Data.Random.Choose (Tree(..), Forest(..))
 
+import Control.Applicative (Applicative(..))
+import Data.Eq (Eq(..))
+import Data.Function (($))
+import Data.Functor ((<$>))
+import Data.Int (Int8)
+import Data.List.NonEmpty (NonEmpty(..))
+import Data.Monoid (mconcat)
+import Data.Ord (Ord(..))
+import Prelude (undefined)
+import System.IO (IO)
+
 import Test.Framework (Test, defaultMain, testGroup)
 import Test.Framework.Providers.QuickCheck2 (testProperty)
 
@@ -24,7 +35,7 @@ tests =
               (undefined :: Tree Int8 Int8)
         , testProperty "functor laws" $
               checkersBatchProp $ Classes.functor
-              (undefined :: Tree Int8 (Int8, Int16, Int32))
+              (undefined :: Tree Int8 (Int8, Int8, Int8))
         ]
     , testGroup "Forest"
         [ testProperty "monoid laws" $
@@ -32,7 +43,7 @@ tests =
               (undefined :: Forest Int8 Int8)
         , testProperty "functor laws" $
               checkersBatchProp $ Classes.functor
-              (undefined :: Forest Int8 (Int8, Int16, Int32))
+              (undefined :: Forest Int8 (Int8, Int8, Int8))
         ]
     ]
 
