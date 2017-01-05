@@ -10,11 +10,10 @@ module Data.Random.Choose.Executable
     ( main
 
     -- * Args
-    , Args(..), argsParser, argsInfoMod, argsParserInfo
+    , Args(..), Args'(..), argsParser, argsInfoMod, argsParserInfo
 
     -- ** /n/
     , getN, defaultN, parserN
-
     ) where
 
 import Data.Random.Choose (choose)
