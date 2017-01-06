@@ -42,7 +42,7 @@ import Data.Monoid (Monoid(..), Sum(..), (<>))
 import Data.Ord (Ord(..))
 import Data.Sequence (Seq)
 import Data.Traversable (Traversable)
-import GHC.Enum (succ)
+import GHC.Enum (Bounded(..), Enum(..))
 import GHC.Num (Num(..))
 import GHC.Show (Show)
 import Streaming (Stream, Of, chunksOf)
@@ -225,17 +225,28 @@ addToForest values forest =
 --  Indexed
 --------------------------------------------------------------------------------
 
-data Indexed a = Indexed { index :: Int, indexedValue :: a }
+-- | A value (type @a@) paired with some index (type @i@) that represents its
+--   position in some sequence. The 'Eq' and 'Ord' instances are based solely
+--   on the index, ignoring the value.
+data Indexed i a = Indexed
+    { index        :: i -- ^ Determines how 'Indexed' values are compared
+    , indexedValue :: a -- ^ An interesting value that has been tagged with
+                        --   an index
+    }
 
-instance Eq  (Indexed a)
+instance Eq i => Eq (Indexed i a)
   where
     x == y = index x == index y
 
-instance Ord (Indexed a)
+instance Ord i => Ord (Indexed i a)
   where
     compare x y = compare (index x) (index y)
 
-sortIndexedValues :: forall t a. (Foldable t) => t (Indexed a) -> Seq a
+-- | Sort a collection of indexed values according to index, then strip out
+--   the indexes to just get the values.
+sortIndexedValues :: forall t i a. (Foldable t, Ord i)
+    => t (Indexed i a) -- ^ Collection of indexed values
+    -> Seq a           -- ^ The values, sorted by index
 sortIndexedValues = fmap indexedValue . Seq.sort . Seq.fromList . toList
 
 
@@ -269,10 +280,10 @@ seqStream size =
 
 -- | Example: A stream of @[a, b, c]@ becomes a stream of
 --   @[Indexed 0 a, Indexed 1 b, Indexed 2 c]@.
-indexedStream :: forall m a r. (Monad m)
-    => Stream (Of          a)  m r -- ^ Stream of @a@
-    -> Stream (Of (Indexed a)) m r -- ^ Stream of @Indexed a@
-indexedStream = Stream.zipWith Indexed (Stream.iterate succ 0)
+indexedStream :: forall m i a r. (Monad m, Bounded i, Enum i)
+    => Stream (Of            a)  m r -- ^ Stream of @a@
+    -> Stream (Of (Indexed i a)) m r -- ^ Stream of @Indexed a@
+indexedStream = Stream.zipWith Indexed (Stream.iterate succ minBound)
 
 -- | Select /n/ items uniformly at random from an input stream.
 choose :: forall m a r. (MonadRandom m)
@@ -283,4 +294,4 @@ choose :: forall m a r. (MonadRandom m)
                          --   at random, in the order they appeared in /s/
 choose n s = do
     tree <- treeStream n $ seqStream 1024 $ indexedStream s
-    pure $ sortIndexedValues (tree :: Tree Int8 (Indexed a))
+    pure $ sortIndexedValues (tree :: Tree Int8 (Indexed Int a))
