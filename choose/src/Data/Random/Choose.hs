@@ -229,9 +229,9 @@ addToForest values forest =
 --   position in some sequence. The 'Eq' and 'Ord' instances are based solely
 --   on the index, ignoring the value.
 data Indexed i a = Indexed
-    { index        :: i -- ^ Determines how 'Indexed' values are compared
-    , indexedValue :: a -- ^ An interesting value that has been tagged with
-                        --   an index
+    { index        :: !i -- ^ Determines how 'Indexed' values are compared
+    , indexedValue :: !a -- ^ An interesting value that has been tagged with
+                         --   an index
     }
 
 instance Eq i => Eq (Indexed i a)
