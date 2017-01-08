@@ -1,26 +1,34 @@
--- | A mechanism to select some fixed number of items uniformly at random from
--- an input stream, using constant space.
+{- | A mechanism to select some fixed number of items uniformly at random from an
+input stream, using constant space.
+
+We store items on a 'Tree', moving them down into randomly-selected branches.
+After we add items to the tree ('addToTree'), we take prune its leftmost items
+('treeTakeRight'). It may be helpful to think of this a @Tree k a@ as a bag of
+items of type @a@ with "score" of type @[k]@ lazily assigned to each item. The
+length of the score is /d/, where /d/ is the maximum depth of the tree. Moving
+an item downwards through the tree corresponds to appending a @k@ to its score.
+Note that the laziness is necessary because /d/ is not known a priori. The
+process of moving items futher down the tree is referred to as disambiguation
+('disambiguateTree') because its purpose is to resolve "ties" in the score.
+-}
 
 module Data.Random.Choose (
 
       choose
 
     -- * Tree
-    -- $algorithm
     , Tree(..), emptyTree, singletonTree, flatTree, addToTree
     , treeConcat, treeDrop, treeTakeRight, disambiguateTree
     , treeLength, treeNull, treeFoldr
 
-    -- ** Forest
+    -- * Forest
     , Forest(..), emptyForest, singletonForest, forestDrop, addToForest
     , forestLength, forestNull, forestConcat, forestFoldr
 
-    -- * Utilities
-
-    -- ** Streaming
+    -- * Streams
     , treeStream, seqStream
 
-    -- ** Indexed
+    -- * Indexed
     , Indexed(..), indexedEq, indexedCompare, indexedStream, sortIndexedValues
     ) where
 
@@ -48,21 +56,6 @@ import Streaming (Stream, Of, chunksOf)
 import qualified Data.Map.Strict as Map
 import qualified Data.Sequence as Seq
 import qualified Streaming.Prelude as Stream
-
-{- $algorithm
-
-We store items on a 'Tree', moving them down into randomly-selected branches. At
-the end, the rightmost /n/ items on the tree are selected. After we add items to
-the tree ('addToTree'), we take prune its leftmost items ('treeTakeRight')
-
-It may be helpful to think of this a @Tree k a@ as a bag of items of type @a@
-with "score" of type @[k]@ lazily assigned to each item. The length of the score
-is /d/, where /d/ is the maximum depth of the tree. Moving an item downwards
-through the tree corresponds to appending a @k@ to its score. Note that the
-laziness is necessary because /d/ is not known a priori. The process of moving
-items futher down the tree is referred to as disambiguation ('disambiguateTree')
-because its purpose is to resolve "ties" in the score.
--}
 
 
 --------------------------------------------------------------------------------
