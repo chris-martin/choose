@@ -1,5 +1,5 @@
--- | "Data.Random.Choose" provides an efficient mechanism to select /n/ items
--- uniformly at random from an input stream, for some fixed /n/.
+-- | A mechanism to select some fixed number of items uniformly at random from
+-- an input stream, using constant space.
 
 module Data.Random.Choose (
 
