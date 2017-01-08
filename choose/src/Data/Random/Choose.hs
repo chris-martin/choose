@@ -9,11 +9,11 @@ module Data.Random.Choose (
     -- $algorithm
     , Tree(..), emptyTree, singletonTree, flatTree, addToTree
     , treeConcat, treeDrop, treeTakeRight, disambiguateTree
-    , treeFoldr
+    , treeLength, treeNull, treeFoldr
 
     -- ** Forest
     , Forest(..), emptyForest, singletonForest, forestDrop, addToForest
-    , forestConcat, forestFoldr
+    , forestLength, forestNull, forestConcat, forestFoldr
 
     -- * Utilities
 
@@ -30,7 +30,7 @@ import Control.Monad.Random (MonadRandom, Random, getRandom)
 import Data.Bool (Bool(..), (||), otherwise)
 import Data.Eq (Eq(..))
 import Data.Foldable (Foldable(..), all)
-import Data.Function ((.), ($), const, id)
+import Data.Function ((.), ($), id)
 import Data.Functor (Functor(..), (<$>))
 import Data.Int (Int, Int8)
 import Data.List.NonEmpty (NonEmpty(..))
@@ -81,9 +81,15 @@ data Tree k a = Tree
 instance Ord k => Monoid (Tree k a) where mempty = emptyTree
                                           mappend = treeConcat
 
-instance Foldable (Tree k) where length = getSum . treeSize
-                                 null = (== mempty) . treeSize
+instance Foldable (Tree k) where length = treeLength
+                                 null = treeNull
                                  foldr = treeFoldr
+
+treeLength :: Tree k a -> Int
+treeLength = getSum . treeSize
+
+treeNull :: Tree k a -> Bool
+treeNull = (== mempty) . treeSize
 
 treeFoldr :: (a -> b -> b) -> b -> Tree k a -> b
 treeFoldr f z (Tree _ values children) = let z' = foldr f z  values
@@ -166,11 +172,14 @@ instance Ord k => Monoid (Forest k a)
 
 instance Foldable (Forest k)
   where length = forestLength
-        null = all null . forestMap
+        null = forestNull
         foldr = forestFoldr
 
 forestLength :: Forest k a -> Int
 forestLength = getSum . foldMap (Sum . length) . forestMap
+
+forestNull :: Forest k a -> Bool
+forestNull = all null . forestMap
 
 forestFoldr :: (a -> b -> b) -> b -> Forest k a -> b
 forestFoldr f z = foldr (\b t -> foldr f t b) z . forestMap
