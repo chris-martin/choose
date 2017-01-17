@@ -44,7 +44,7 @@ import Data.Int (Int, Int8)
 import Data.List.NonEmpty (NonEmpty(..))
 import Data.Map.Strict (Map)
 import Data.Maybe (Maybe(..), maybe)
-import Data.Monoid (Monoid(..), Sum(..), (<>))
+import Data.Monoid (Monoid(..), Sum(..))
 import Data.Ord (Ord(..), Ordering)
 import Data.Sequence (Seq)
 import Data.Traversable (Traversable)
@@ -52,6 +52,12 @@ import GHC.Enum (Bounded(..), Enum(..))
 import GHC.Num (Num(..))
 import GHC.Show (Show)
 import Streaming (Stream, Of, chunksOf)
+
+#if MIN_VERSION_base(4,9,0)
+import Data.Semigroup (Semigroup(..))
+#else
+import Data.Monoid ((<>))
+#endif
 
 import qualified Data.Map.Strict as Map
 import qualified Data.Sequence as Seq
@@ -70,6 +76,10 @@ data Tree k a = Tree
                                  -- greater keys are more likely to be included
                                  -- in the final result)
     } deriving (Eq, Functor, Show)
+
+#if MIN_VERSION_base(4,9,0)
+instance Ord k => Semigroup (Tree k a) where (<>) = treeConcat
+#endif
 
 instance Ord k => Monoid (Tree k a) where mempty = emptyTree
                                           mappend = treeConcat
@@ -159,14 +169,16 @@ disambiguateTree t@(Tree size values children)
 newtype Forest k a = Forest { forestMap :: Map k (Tree k a) }
     deriving (Eq, Functor, Show)
 
-instance Ord k => Monoid (Forest k a)
-  where mempty = emptyForest
-        mappend = forestConcat
+#if MIN_VERSION_base(4,9,0)
+instance Ord k => Semigroup (Forest k a) where (<>) = forestConcat
+#endif
 
-instance Foldable (Forest k)
-  where length = forestLength
-        null = forestNull
-        foldr = forestFoldr
+instance Ord k => Monoid (Forest k a) where mempty = emptyForest
+                                            mappend = forestConcat
+
+instance Foldable (Forest k) where length = forestLength
+                                   null = forestNull
+                                   foldr = forestFoldr
 
 forestLength :: Forest k a -> Int
 forestLength = getSum . foldMap (Sum . length) . forestMap
