@@ -45,7 +45,9 @@ tests:
       - base
       - checkers
       - choose
+      - HUnit
       - QuickCheck
       - test-framework
+      - test-framework-hunit
       - test-framework-quickcheck2
     ghc-options: -Wall -fno-warn-orphans

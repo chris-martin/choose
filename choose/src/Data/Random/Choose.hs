@@ -114,7 +114,7 @@ singletonTree (k:ks) a = Tree 1 mempty (singletonForest (k :| ks) a)
 -- items have any "score" at all).
 flatTree :: Seq a    -- ^ Items to be made into a tree
          -> Tree k a -- ^ A tree with all of the items at its root
-flatTree xs = Tree 1 xs emptyForest
+flatTree xs = Tree (Sum $ length xs) xs emptyForest
 
 -- | Combine two trees. The result contains each item from both trees at the
 -- same position it was located in its original tree. This is 'mappend'.
@@ -130,7 +130,9 @@ addToTree
     -> Tree k a -- ^ /t/: Tree we're adding things to
     -> Tree k a -- ^ A tree containing all of the items from /t/ in their same
                 -- positions, plus each of the /xs/ at the root of the tree.
-addToTree items t = t { treeValues = items <> treeValues t }
+addToTree items (Tree size values children) = Tree (Sum (length items) <> size)
+                                                   (items <> values)
+                                                   children
 
 -- | Remove the /n/ leftmost items from a tree.
 treeDrop :: forall m k a. (Ord k, Random k, MonadRandom m)
