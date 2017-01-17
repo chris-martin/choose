@@ -32,6 +32,7 @@ matrix:
   # Nightly builds are allowed to fail
   - env: ARGS="--resolver nightly"
     compiler: "stack nightly"
+    addons: {apt: {packages: [libgmp-dev]}}
 
   # Build on OS X in addition to Linux
   - env: ARGS=""
