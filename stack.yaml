@@ -1,11 +1,5 @@
-resolver: lts-7.14
+resolver: lts-10.8
 
 packages:
   - choose
   - choose-exe
-
-extra-deps:
-  - containers-0.5.9.1
-
-nix:
-  shell-file: shell.nix
