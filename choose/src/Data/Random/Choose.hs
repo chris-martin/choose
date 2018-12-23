@@ -23,7 +23,7 @@ module Data.Random.Choose (
     -- * Tree
     , Tree(..), emptyTree, singletonTree, flatTree, addToTree
     , treeConcat, treeDrop, treeTakeRight, disambiguateTree
-    , treeLength, treeNull, treeFoldr
+    , treeNull, treeFoldr
 
     -- * Forest
     , Forest(..), emptyForest, singletonForest, forestDrop, addToForest
@@ -41,7 +41,6 @@ import Data.Foldable        (all, toList)
 import Data.Int             (Int, Int8)
 import Data.List.NonEmpty   (NonEmpty (..))
 import Data.Map.Strict      (Map)
-import Data.Monoid          (Sum (..))
 import Data.Sequence        (Seq)
 import Prelude              hiding (map)
 import Streaming            (Of, Stream, chunksOf)
@@ -56,7 +55,7 @@ import qualified Streaming.Prelude as Stream
 --------------------------------------------------------------------------------
 
 data Tree k a = Tree
-    { treeSize     :: Sum Int    -- ^ Total number of items at this node and
+    { treeSize     :: Int        -- ^ Total number of items at this node and
                                  -- below
     , treeValues   :: Seq a      -- ^ Items at this node
     , treeChildren :: Forest k a -- ^ Subtrees (lesser keys are evicted first,
@@ -69,15 +68,12 @@ instance Ord k => Semigroup (Tree k a) where (<>) = treeConcat
 instance Ord k => Monoid (Tree k a) where mempty = emptyTree
                                           mappend = treeConcat
 
-instance Foldable (Tree k) where length = treeLength
+instance Foldable (Tree k) where length = treeSize
                                  null = treeNull
                                  foldr = treeFoldr
 
-treeLength :: Tree k a -> Int
-treeLength = getSum . treeSize
-
 treeNull :: Tree k a -> Bool
-treeNull = (== mempty) . treeSize
+treeNull = (== 0) . treeSize
 
 treeFoldr :: (a -> b -> b) -> b -> Tree k a -> b
 treeFoldr f z (Tree _ values children) = let z' = foldr f z  values
@@ -99,13 +95,13 @@ singletonTree (k:ks) a = Tree 1 mempty (singletonForest (k :| ks) a)
 -- items have any "score" at all).
 flatTree :: Seq a    -- ^ Items to be made into a tree
          -> Tree k a -- ^ A tree with all of the items at its root
-flatTree xs = Tree (Sum $ length xs) xs emptyForest
+flatTree xs = Tree (length xs) xs emptyForest
 
 -- | Combine two trees. The result contains each item from both trees at the
 -- same position it was located in its original tree. This is 'mappend'.
 treeConcat :: Ord k => Tree k a -> Tree k a -> Tree k a
 treeConcat (Tree size  values  children)
-           (Tree size' values' children') = Tree (size     <> size')
+           (Tree size' values' children') = Tree (size     +  size')
                                                  (values   <> values')
                                                  (children <> children')
 
@@ -115,7 +111,7 @@ addToTree
     -> Tree k a -- ^ /t/: Tree we're adding things to
     -> Tree k a -- ^ A tree containing all of the items from /t/ in their same
                 -- positions, plus each of the /xs/ at the root of the tree.
-addToTree items (Tree size values children) = Tree (Sum (length items) <> size)
+addToTree items (Tree size values children) = Tree (length items + size)
                                                    (items <> values)
                                                    children
 
@@ -129,7 +125,7 @@ treeDrop n t | n <= 0        = pure t
              | n >= length t = pure emptyTree
              | otherwise = do t'        <- disambiguateTree t
                               children' <- forestDrop n $ treeChildren t'
-                              pure $ Tree (Sum $ length t' - n) mempty children'
+                              pure $ Tree (length t' - n) mempty children'
 
 -- | Retain the /n/ rightmost items in a tree.
 treeTakeRight :: forall m k a. (Ord k, Random k, MonadRandom m)
@@ -166,7 +162,7 @@ instance Foldable (Forest k) where length = forestLength
                                    foldr = forestFoldr
 
 forestLength :: Forest k a -> Int
-forestLength = getSum . foldMap (Sum . length) . forestMap
+forestLength = sum . fmap treeSize . forestMap
 
 forestNull :: Forest k a -> Bool
 forestNull = all null . forestMap
