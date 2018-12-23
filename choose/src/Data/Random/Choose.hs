@@ -232,8 +232,7 @@ forestConcat (Forest x) (Forest y) = Forest $ Map.unionWith (<>) x y
 --------------------------------------------------------------------------------
 
 -- | A value (type @a@) paired with some index (type @i@) that represents its
--- position in some sequence. The 'Eq' and 'Ord' instances are based solely on
--- the index, ignoring the value.
+-- position in some sequence.
 --
 -- We used 'Indexed' to keep track of each value's position in the stream so
 -- that after the final values are chosen we can sort them back into their
@@ -243,10 +242,6 @@ data Indexed i a = Indexed
     , indexedValue :: !a -- ^ An interesting value that has been tagged with an
                          -- index
     }
-
-instance Eq i => Eq (Indexed i a) where (==) = indexedEq
-
-instance Ord i => Ord (Indexed i a) where compare = indexedCompare
 
 indexedEq :: Eq i => Indexed i a -> Indexed i a -> Bool
 indexedEq x y = index x == index y
@@ -259,7 +254,8 @@ indexedCompare x y = compare (index x) (index y)
 sortIndexedValues :: forall t i a. (Foldable t, Ord i)
     => t (Indexed i a) -- ^ Collection of indexed values
     -> Seq a           -- ^ The values, sorted by index
-sortIndexedValues = fmap indexedValue . Seq.sort . Seq.fromList . toList
+sortIndexedValues =
+    fmap indexedValue . Seq.sortBy indexedCompare . Seq.fromList . toList
 
 
 --------------------------------------------------------------------------------
