@@ -1,0 +1,51 @@
+cabal-version: 1.12
+
+-- This file has been generated from package.yaml by hpack version 0.31.1.
+--
+-- see: https://github.com/sol/hpack
+--
+-- hash: 6f8bfd89f089046c2eec592e29fdc1e1783179a8ea4d40bedc33c77ae42e3de4
+
+name:           choose-exe
+version:        1.0.0.0
+synopsis:       Command-line program to choose random element from a stream.
+
+description:    A command-line program that reads lines from stdin and outputs some fixed number of them, selected uniformly at random.
+category:       Application
+author:         Chris Martin <ch.martin@gmail.com>
+maintainer:     Chris Martin <ch.martin@gmail.com>
+license:        Apache-2.0
+license-file:   license.txt
+build-type:     Simple
+
+library
+  hs-source-dirs:
+      src
+  ghc-options: -Wall
+  build-depends:
+      base
+    , choose
+    , optparse-applicative
+    , streaming
+    , text
+  exposed-modules:
+      Data.Random.Choose.Executable
+  other-modules:
+      Paths_choose_exe
+  default-language: Haskell2010
+
+executable choose
+  main-is: choose.hs
+  other-modules:
+      Paths_choose_exe
+  hs-source-dirs:
+      app
+  ghc-options: -Wall
+  build-depends:
+      base
+    , choose
+    , choose-exe
+    , optparse-applicative
+    , streaming
+    , text
+  default-language: Haskell2010

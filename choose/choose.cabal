@@ -1,0 +1,60 @@
+cabal-version: 1.12
+
+-- This file has been generated from package.yaml by hpack version 0.31.1.
+--
+-- see: https://github.com/sol/hpack
+--
+-- hash: 432847bb722963b621a3ac2ef4664a5d641ab4aa70ede5b93e9a504160abf702
+
+name:           choose
+version:        1.0.0.0
+synopsis:       Choose random elements from a stream.
+
+description:    Provides an efficient mechanism to select /n/ items uniformly at random from an input stream, for some fixed /n/.
+category:       Random
+author:         Chris Martin <ch.martin@gmail.com>
+maintainer:     Chris Martin <ch.martin@gmail.com>
+license:        Apache-2.0
+license-file:   license.txt
+build-type:     Simple
+
+library
+  hs-source-dirs:
+      src
+  ghc-options: -Wall
+  build-depends:
+      MonadRandom
+    , base
+    , containers
+    , semigroups
+    , streaming
+    , transformers
+  exposed-modules:
+      Data.Random.Choose
+  other-modules:
+      Paths_choose
+  default-language: Haskell2010
+
+test-suite test
+  type: exitcode-stdio-1.0
+  main-is: test.hs
+  other-modules:
+      Paths_choose
+  hs-source-dirs:
+      test
+  ghc-options: -Wall -Wall -fno-warn-orphans
+  build-depends:
+      HUnit
+    , MonadRandom
+    , QuickCheck
+    , base
+    , checkers
+    , choose
+    , containers
+    , semigroups
+    , streaming
+    , test-framework
+    , test-framework-hunit
+    , test-framework-quickcheck2
+    , transformers
+  default-language: Haskell2010
