@@ -1,5 +1,5 @@
-{- | A mechanism to select some fixed number of items uniformly at random from an
-input stream, using constant space.
+{- | A mechanism to select some fixed number of items uniformly at random from
+an input stream, using constant space.
 
 We store items on a 'Tree', moving them down into randomly-selected branches.
 After we add items to the tree ('addToTree'), we take prune its leftmost items
@@ -9,8 +9,7 @@ length of the score is /d/, where /d/ is the maximum depth of the tree. Moving
 an item downwards through the tree corresponds to appending a @k@ to its score.
 Note that the laziness is necessary because /d/ is not known a priori. The
 process of moving items futher down the tree is referred to as disambiguation
-('disambiguateTree') because its purpose is to resolve "ties" in the score.
--}
+('disambiguateTree') because its purpose is to resolve "ties" in the score. -}
 
 module Data.Random.Choose (
 
@@ -32,32 +31,15 @@ module Data.Random.Choose (
     , Indexed(..), indexedEq, indexedCompare, indexedStream, sortIndexedValues
     ) where
 
-import Control.Applicative (Applicative(..))
-import Control.Monad (Monad(..), mapM)
 import Control.Monad.Random (MonadRandom, Random, getRandom)
-import Data.Bool (Bool(..), (||), otherwise)
-import Data.Eq (Eq(..))
-import Data.Foldable (Foldable(..), all)
-import Data.Function ((.), ($), id)
-import Data.Functor (Functor(..), (<$>))
+import Data.Foldable (all, toList)
 import Data.Int (Int, Int8)
-import Data.List.NonEmpty (NonEmpty(..))
+import Data.List.NonEmpty (NonEmpty (..))
 import Data.Map.Strict (Map)
-import Data.Maybe (Maybe(..), maybe)
-import Data.Monoid (Monoid(..), Sum(..))
-import Data.Ord (Ord(..), Ordering)
+import Data.Monoid (Sum (..))
 import Data.Sequence (Seq)
-import Data.Traversable (Traversable)
-import GHC.Enum (Bounded(..), Enum(..))
-import GHC.Num (Num(..))
-import GHC.Show (Show)
+import Prelude hiding (map)
 import Streaming (Stream, Of, chunksOf)
-
-#if MIN_VERSION_base(4,9,0)
-import Data.Semigroup (Semigroup(..))
-#else
-import Data.Monoid ((<>))
-#endif
 
 import qualified Data.Map.Strict as Map
 import qualified Data.Sequence as Seq
@@ -77,9 +59,7 @@ data Tree k a = Tree
                                  -- in the final result)
     } deriving (Eq, Functor, Show)
 
-#if MIN_VERSION_base(4,9,0)
 instance Ord k => Semigroup (Tree k a) where (<>) = treeConcat
-#endif
 
 instance Ord k => Monoid (Tree k a) where mempty = emptyTree
                                           mappend = treeConcat

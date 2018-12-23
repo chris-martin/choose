@@ -1,23 +1,15 @@
+{-# OPTIONS_GHC -Wno-orphans #-}
+
 module Main (main) where
 
 -- import qualified Data.Random.Choose as Choose
 import Data.Random.Choose (Tree(..), Forest(..),
     emptyTree, flatTree, singletonTree, addToTree, singletonForest)
 
-import Control.Applicative (Applicative(..))
-import Data.Bool
-import Data.Eq (Eq(..))
-import Data.Foldable (length, toList)
-import Data.Function (($))
-import Data.Functor ((<$>))
+import Data.Foldable (toList)
 import Data.Int (Int8)
 import Data.List.NonEmpty (NonEmpty(..))
-import Data.Monoid (mconcat)
-import Data.Ord (Ord(..))
 import Data.Sequence (Seq)
-import GHC.Num (Num(..))
-import Prelude (undefined)
-import System.IO (IO)
 
 import Test.Framework (Test, defaultMain, testGroup)
 import Test.Framework.Providers.QuickCheck2 (testProperty)

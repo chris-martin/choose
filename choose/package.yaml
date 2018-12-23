@@ -20,7 +20,6 @@ default-extensions:
   - CPP
   - DeriveFunctor
   - InstanceSigs
-  - NoImplicitPrelude
   - RankNTypes
   - ScopedTypeVariables
 

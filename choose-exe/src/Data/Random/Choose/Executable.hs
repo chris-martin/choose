@@ -18,7 +18,7 @@ module Data.Random.Choose.Executable
 
 import Data.Random.Choose (choose)
 
-import Control.Applicative (Applicative(..), (<|>), optional)
+import Control.Applicative (optional, (<|>))
 import Control.Monad (Monad(..), mapM_, when)
 import Data.Function ((.), ($), id)
 import Data.Functor ((<$>))
@@ -28,11 +28,10 @@ import Data.Monoid ((<>))
 import Data.Ord (Ord(..))
 import Data.String (String)
 import GHC.Show (show)
+import Prelude hiding (read, mod)
 import System.IO (IO)
 import Options.Applicative.Extra (execParser, helper)
 import Options.Applicative.Types (Parser, ParserInfo)
-
-import Prelude (putStrLn)
 
 import qualified Data.Text as Text
 import qualified Data.Text.IO as TextIO
