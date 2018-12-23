@@ -16,12 +16,6 @@ license:      Apache-2.0
 license-file: license.txt
 
 ghc-options: -Wall
-default-extensions:
-  - CPP
-  - DeriveFunctor
-  - InstanceSigs
-  - RankNTypes
-  - ScopedTypeVariables
 
 dependencies:
   - base

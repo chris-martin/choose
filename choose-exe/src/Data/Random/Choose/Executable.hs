@@ -18,28 +18,28 @@ module Data.Random.Choose.Executable
 
 import Data.Random.Choose (choose)
 
-import Control.Applicative (optional, (<|>))
-import Control.Monad (Monad(..), mapM_, when)
-import Data.Function ((.), ($), id)
-import Data.Functor ((<$>))
-import Data.Int (Int)
-import Data.Maybe (Maybe, maybe)
-import Data.Monoid ((<>))
-import Data.Ord (Ord(..))
-import Data.String (String)
-import GHC.Show (show)
-import Prelude hiding (read, mod)
-import System.IO (IO)
+import Control.Applicative       (optional, (<|>))
+import Control.Monad             (Monad (..), mapM_, when)
+import Data.Function             (id, ($), (.))
+import Data.Functor              ((<$>))
+import Data.Int                  (Int)
+import Data.Maybe                (Maybe, maybe)
+import Data.Monoid               ((<>))
+import Data.Ord                  (Ord (..))
+import Data.String               (String)
+import GHC.Show                  (show)
 import Options.Applicative.Extra (execParser, helper)
 import Options.Applicative.Types (Parser, ParserInfo)
+import Prelude                   hiding (mod, read)
+import System.IO                 (IO)
 
-import qualified Data.Text as Text
-import qualified Data.Text.IO as TextIO
-import qualified Streaming.Prelude as Stream
+import qualified Data.Text                   as Text
+import qualified Data.Text.IO                as TextIO
 import qualified Options.Applicative.Builder as Opt
+import qualified Streaming.Prelude           as Stream
 
+import Data.Version     (showVersion)
 import Paths_choose_exe (version)
-import Data.Version (showVersion)
 
 --------------------------------------------------------------------------------
 

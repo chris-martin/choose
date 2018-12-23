@@ -1,3 +1,8 @@
+{-# LANGUAGE DeriveFunctor       #-}
+{-# LANGUAGE InstanceSigs        #-}
+{-# LANGUAGE RankNTypes          #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+
 {- | A mechanism to select some fixed number of items uniformly at random from
 an input stream, using constant space.
 
@@ -32,17 +37,17 @@ module Data.Random.Choose (
     ) where
 
 import Control.Monad.Random (MonadRandom, Random, getRandom)
-import Data.Foldable (all, toList)
-import Data.Int (Int, Int8)
-import Data.List.NonEmpty (NonEmpty (..))
-import Data.Map.Strict (Map)
-import Data.Monoid (Sum (..))
-import Data.Sequence (Seq)
-import Prelude hiding (map)
-import Streaming (Stream, Of, chunksOf)
+import Data.Foldable        (all, toList)
+import Data.Int             (Int, Int8)
+import Data.List.NonEmpty   (NonEmpty (..))
+import Data.Map.Strict      (Map)
+import Data.Monoid          (Sum (..))
+import Data.Sequence        (Seq)
+import Prelude              hiding (map)
+import Streaming            (Of, Stream, chunksOf)
 
-import qualified Data.Map.Strict as Map
-import qualified Data.Sequence as Seq
+import qualified Data.Map.Strict   as Map
+import qualified Data.Sequence     as Seq
 import qualified Streaming.Prelude as Stream
 
 
@@ -151,9 +156,7 @@ disambiguateTree t@(Tree size values children)
 newtype Forest k a = Forest { forestMap :: Map k (Tree k a) }
     deriving (Eq, Functor, Show)
 
-#if MIN_VERSION_base(4,9,0)
 instance Ord k => Semigroup (Forest k a) where (<>) = forestConcat
-#endif
 
 instance Ord k => Monoid (Forest k a) where mempty = emptyForest
                                             mappend = forestConcat

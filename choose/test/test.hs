@@ -1,27 +1,33 @@
 {-# OPTIONS_GHC -Wno-orphans #-}
 
+{-# LANGUAGE DeriveFunctor       #-}
+{-# LANGUAGE InstanceSigs        #-}
+{-# LANGUAGE RankNTypes          #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+
 module Main (main) where
 
 -- import qualified Data.Random.Choose as Choose
-import Data.Random.Choose (Tree(..), Forest(..),
-    emptyTree, flatTree, singletonTree, addToTree, singletonForest)
+import Data.Random.Choose
+    (Forest (..), Tree (..), addToTree, emptyTree, flatTree, singletonForest,
+    singletonTree)
 
-import Data.Foldable (toList)
-import Data.Int (Int8)
-import Data.List.NonEmpty (NonEmpty(..))
-import Data.Sequence (Seq)
+import Data.Foldable      (toList)
+import Data.Int           (Int8)
+import Data.List.NonEmpty (NonEmpty (..))
+import Data.Sequence      (Seq)
 
-import Test.Framework (Test, defaultMain, testGroup)
+import Test.Framework                       (Test, defaultMain, testGroup)
+import Test.Framework.Providers.HUnit       (testCase)
 import Test.Framework.Providers.QuickCheck2 (testProperty)
-import Test.Framework.Providers.HUnit (testCase)
-import Test.HUnit ((@?=))
+import Test.HUnit                           ((@?=))
 
-import Test.QuickCheck (Arbitrary, Gen, Property,
-    arbitrary, conjoin, label, listOf)
+import Test.QuickCheck
+    (Arbitrary, Gen, Property, arbitrary, conjoin, label, listOf)
 
+import           Test.QuickCheck.Checkers (EqProp)
 import qualified Test.QuickCheck.Checkers as Checkers
-import qualified Test.QuickCheck.Classes as Classes
-import Test.QuickCheck.Checkers (EqProp)
+import qualified Test.QuickCheck.Classes  as Classes
 
 main :: IO ()
 main = defaultMain tests
