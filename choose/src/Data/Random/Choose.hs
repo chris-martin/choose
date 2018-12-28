@@ -54,23 +54,40 @@ import qualified Streaming.Prelude as Stream
 --  Tree
 --------------------------------------------------------------------------------
 
-data Tree k a = Tree
-    { treeSize     :: Int        -- ^ Total number of items at this node and
-                                 -- below
-    , treeValues   :: Seq a      -- ^ Items at this node
-    , treeChildren :: Forest k a -- ^ Subtrees (lesser keys are evicted first,
-                                 -- greater keys are more likely to be included
-                                 -- in the final result)
+data
+
+data Tree a =
+  Tree
+    { treeSize    :: Natural
+    , treeValues  :: Seq a
+    , treeLesser  :: MaybeTree a
+    , treeGreater :: MaybeTree a
     } deriving (Eq, Functor, Show)
 
-instance Ord k => Semigroup (Tree k a) where (<>) = treeConcat
+instance Semigroup (Tree a)
+  where
+    a <> b =
+        Tree
+            { treeSize    = treeSize    a +  treeSize    b
+            , treeValues  = treeValues  a <> treeValues  b
+            , treeLesser  = treeLesser  a <> treeLesser  b
+            , treeGreater = treeGreater a <> treeGreater b
+            }
 
-instance Ord k => Monoid (Tree k a) where mempty = emptyTree
-                                          mappend = treeConcat
+instance Monoid (Tree a)
+  where
+    mempty = Tree 0 Seq.empty Nothing Nothing
 
-instance Foldable (Tree k) where length = treeSize
-                                 null = treeNull
-                                 foldr = treeFoldr
+instance Foldable Tree
+  where
+    length = fromIntegral . treeSize
+
+    foldr f z t =
+        let
+            z' = foldr f z (treeValues t)
+            z'' = foldr
+        in
+
 
 treeNull :: Tree k a -> Bool
 treeNull = (== 0) . treeSize
