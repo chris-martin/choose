@@ -1,4 +1,6 @@
-![](https://travis-ci.org/chris-martin/choose.svg?branch=master)
+Moved to https://codeberg.org/chris-martin/choose
+
+---
 
 An efficient mechanism to select *n* items uniformly at random from an input
 stream, for some fixed *n*.
